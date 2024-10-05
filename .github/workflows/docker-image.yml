@@ -6,7 +6,10 @@ on:
 
 jobs:
   build:
-@@ -13,26 +14,23 @@ jobs:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Клонирование репозитория
       - name: Checkout repository
         uses: actions/checkout@v3
 
@@ -25,6 +28,7 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+
       # Шаг 4: Сборка Docker-образа
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest .
