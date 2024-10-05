@@ -37,10 +37,11 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
 
-      # Шаг 6: Деплой приложения в Kubernetes
-      - name: Deploy to Kubernetes
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
-        run: |
-          echo "$KUBECONFIG" > $HOME/.kube/config
-          kubectl set image deployment/diplom diplom=${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest --namespace default
+# Шаг 6: Деплой приложения в Kubernetes
+- name: Deploy to Kubernetes
+  env:
+    KUBECONFIG: ${{ secrets.KUBECONFIG }}
+  run: |
+    mkdir -p $HOME/.kube
+    echo "$KUBECONFIG" > $HOME/.kube/config
+    kubectl set image deployment/diplom diplom=${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest --namespace default
