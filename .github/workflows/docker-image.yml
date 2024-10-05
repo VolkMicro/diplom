@@ -1,27 +1,30 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline1
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Шаг 1: Клонирование репозитория
+@@ -13,26 +14,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Шаг 2: Установка Docker
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      # Шаг 3: Логин в Docker Hub
+      # Шаг 2: Логин в Docker Hub
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
+      # Шаг 3: Передача секретов в контейнер
+      - name: Set environment variables
+        run: |
+          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
+          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
+          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
       # Шаг 4: Сборка Docker-образа
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest .
@@ -29,8 +32,3 @@ jobs:
       # Шаг 5: Публикация Docker-образа в Docker Hub
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
-
-      # Шаг 6: Деплой приложения в Kubernetes
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl set image deployment/diplom diplom=${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
