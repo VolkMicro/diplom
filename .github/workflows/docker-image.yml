@@ -24,3 +24,26 @@ jobs:
       # Шаг 4: Публикация Docker-образа в Docker Hub
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Установка SSH для подключения к серверу
+      - name: Setup SSH for deploy
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+
+      # Деплой Docker-образа на сервер
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
+          docker stop diplom-app || true
+          docker rm diplom-app || true
+          docker run -d --name diplom-app -p 8000:8000 ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
+          EOF
