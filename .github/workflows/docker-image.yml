@@ -43,5 +43,5 @@ jobs:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
         run: |
           mkdir -p $HOME/.kube
-          echo "$KUBECONFIG" > $HOME/.kube/config
+          echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
           kubectl set image deployment/diplom diplom=${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest --namespace default
