@@ -1,4 +1,4 @@
-name: CI/CD Pipeline1
+name: CI/CD Pipeline
 
 on:
   push:
@@ -9,15 +9,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Шаг 1: Клонирование репозитория
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # Шаг 1: Поддержка длинных путей
+      - name: Поддержка длинных путей
+        run: |
+          git config --global core.longpaths true
+          git config --system core.longpaths true
 
-      # Шаг 2: Логин в Docker Hub
+      # Шаг 2: Клонирование репозитория
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1  # мелкий клон для избежания проблем с длинными путями
+
+      # Шаг 3: Логин в Docker Hub
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      # Шаг 3: Передача секретов в контейнер
+      # Шаг 4: Передача секретов в контейнер
       - name: Set environment variables
         run: |
           echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
@@ -29,15 +36,15 @@ jobs:
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
 
-      # Шаг 4: Сборка Docker-образа
+      # Шаг 5: Сборка Docker-образа
       - name: Build Docker image
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest .
 
-      # Шаг 5: Публикация Docker-образа в Docker Hub
+      # Шаг 6: Публикация Docker-образа в Docker Hub
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
 
-      # Шаг 6: Деплой приложения в Kubernetes1
+      # Шаг 7: Деплой приложения в Kubernetes
       - name: Deploy to Kubernetes
         env:
           KUBECONFIG: ${{ secrets.KUBECONFIG }}
