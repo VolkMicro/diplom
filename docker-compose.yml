@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-    - tutorial-volume:/var/lib/postgresql/data
+      - tutorial-volume:/var/lib/postgresql/data
 
 volumes:
   tutorial-volume:
