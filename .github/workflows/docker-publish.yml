@@ -1,0 +1,33 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Запускается при создании тега, например v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Шаг 1: Клонирование репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Шаг 2: Логин в Docker Hub
+      - name: Логин в Docker Hub
+        run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
+
+      # Шаг 3: Сборка Docker-образа
+      - name: Сборка Docker-образа
+        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }} .
+
+      # Шаг 4: Публикация Docker-образа в Docker Hub
+      - name: Публикация Docker-образа в Docker Hub
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }}
+
+      # Шаг 5: Деплой в Kubernetes
+      - name: Деплой в Kubernetes
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
