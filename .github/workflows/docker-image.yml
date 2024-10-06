@@ -18,17 +18,21 @@ jobs:
       # Шаг 2: Клонирование репозитория
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 1  # мелкий клон для избежания проблем с длинными путями
+          fetch-depth: 1  # Мелкий клон для избежания проблем с длинными путями
 
-      # Шаг 3: Логин в Docker Hub
+      # Шаг 3: Проверка файлов в репозитории (проверка наличия config/kubeconfig.yaml)
+      - name: Проверка файлов в репозитории
+        run: ls -R
+
+      # Шаг 4: Логин в Docker Hub
       - name: Логин в Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      # Шаг 4: Сборка Docker-образа
+      # Шаг 5: Сборка Docker-образа
       - name: Сборка Docker-образа
         run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }} .
 
-      # Шаг 5: Публикация Docker-образа в Docker Hub
+      # Шаг 6: Публикация Docker-образа в Docker Hub
       - name: Публикация Docker-образа в Docker Hub
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }}
 
