@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  labels:
+    app: my-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+        - name: app
+          image: microvolk/diplom:latest  # Укажите актуальный образ
+          ports:
+            - containerPort: 3003
+          env:
+            - name: DB_HOST
+              value: "db"
+            - name: DB_NAME
+              value: "tutorial-dev"
+            - name: DB_USER
+              value: "vinhle"
+            - name: DB_PASS
+              value: "password"
