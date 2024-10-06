@@ -1,3 +1,10 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Запуск пайплайна при создании тега, например v1.0.0
+  workflow_dispatch:  # Ручной запуск пайплайна
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,9 +28,17 @@ jobs:
 
       # Шаг 5: Настройка kubeconfig для подключения к Kubernetes кластеру
       - name: Настроить kubeconfig
-        run: echo "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG_DATA }}" | base64 --decode > $HOME/.kube/config
 
-      # Шаг 6: Деплой в Kubernetes
+      # Шаг 6: Установка kubectl
+      - name: Установка kubectl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kubectl
+
+      # Шаг 7: Деплой в Kubernetes
       - name: Деплой в Kubernetes
         run: |
           kubectl apply -f deployment.yaml
