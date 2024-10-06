@@ -34,7 +34,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Шаг 2: Установка Helm
+      # Шаг 2: Установка Helm1
       - name: Установка Helm
         run: |
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
