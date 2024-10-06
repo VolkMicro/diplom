@@ -52,8 +52,8 @@ jobs:
           # Создание директории для kubeconfig
           mkdir -p $HOME/.kube
           
-          # Копирование kubeconfig с удалённого сервера
-          scp microvolk@89.169.152.39:/home/microvolk/diplom/config/kubeconfig.yaml $HOME/.kube/config
+          # Использование kubeconfig из репозитория
+          cp ./config/kubeconfig.yaml $HOME/.kube/config
 
           # Обновление/установка приложения с помощью Helm
           helm upgrade --install myapp ./myapp \
