@@ -3,6 +3,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    tags:
+      - "*.*.*"  # Реакция на теги для автоматической сборки с версией тега
 
 jobs:
   build:
@@ -11,9 +13,7 @@ jobs:
     steps:
       # Шаг 1: Поддержка длинных путей
       - name: Поддержка длинных путей
-        run: |
-          git config --global core.longpaths true
-          git config --system core.longpaths true
+        run: git config --global core.longpaths true
 
       # Шаг 2: Клонирование репозитория
       - uses: actions/checkout@v3
@@ -21,34 +21,41 @@ jobs:
           fetch-depth: 1  # мелкий клон для избежания проблем с длинными путями
 
       # Шаг 3: Логин в Docker Hub
-      - name: Log in to Docker Hub
+      - name: Логин в Docker Hub
         run: echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin
 
-      # Шаг 4: Передача секретов в контейнер
-      - name: Set environment variables
+      # Шаг 4: Сборка Docker-образа
+      - name: Сборка Docker-образа
+        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }} .
+
+      # Шаг 5: Публикация Docker-образа в Docker Hub
+      - name: Публикация Docker-образа в Docker Hub
+        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:${{ github.ref_name }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Шаг 1: Установка Helm
+      - name: Установка Helm
         run: |
-          echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> .env
-          echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> .env
-          echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> .env
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
-      # Шаг 5: Сборка Docker-образа
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest .
-
-      # Шаг 6: Публикация Docker-образа в Docker Hub
-      - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest
-
-      # Шаг 7: Деплой приложения в Kubernetes
-      - name: Deploy to Kubernetes
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      # Шаг 2: Установка kubectl
+      - name: Установка kubectl
         run: |
+          sudo snap install kubectl --classic
+
+      # Шаг 3: Деплой в Kubernetes
+      - name: Деплой в Kubernetes
+        run: |
+          # Создание директории для kubeconfig
           mkdir -p $HOME/.kube
-          echo "$KUBECONFIG" | base64 --decode > $HOME/.kube/config
-          kubectl set image deployment/diplom diplom=${{ secrets.DOCKER_HUB_USERNAME }}/diplom:latest --namespace default
+          
+          # Копирование kubeconfig с удалённого сервера
+          scp microvolk@89.169.152.39:/home/microvolk/diplom/config/kubeconfig.yaml $HOME/.kube/config
+
+          # Обновление/установка приложения с помощью Helm
+          helm upgrade --install myapp ./myapp \
+            --set image.tag=${{ github.ref_name }} \
+            --set image.repository=${{ secrets.DOCKER_HUB_USERNAME }}/diplom
